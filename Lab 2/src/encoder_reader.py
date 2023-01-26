@@ -7,14 +7,14 @@
 @date
 """
 
-import time
+import time, pyb
 
 class encoder:
     """@brief"""
     
     def __init__(self, pin1, pin2, timer):
-        self.pin1 = pyb.Pin(pin1, pyb.Pin.IN)
-        self.pin2 = pyb.Pin(pin2, pyb.Pin.IN)
+        self.pin1 = pyb.Pin(pin1, pyb.Pin.OUT_PP)
+        self.pin2 = pyb.Pin(pin2, pyb.Pin.OUT_PP)
         self.timer = pyb.Timer (timer, period = 0xFFFF, prescaler = 0)
         self.ch1 = self.timer.channel(1, pyb.Timer.ENC_AB, pin=self.pin1)
         self.ch2 = self.timer.channel(2, pyb.Timer.ENC_AB, pin=self.pin2)
@@ -24,19 +24,20 @@ class encoder:
     def read_encoder(self):
         self.current = self.timer.counter()
         self.delta = self.current-self.prev
-        if abs(self.delta) > 0xFFFF/2:
+        if abs(self.delta) > (0xFFFF+1)/2:
             if self.delta > 0:
-                self.count += self.delta - 0xFFFF
+                self.count -= self.delta - 0xFFFF
             else:
-                self.count += self.delta + 0xFFFF
+                self.count -= self.delta + 0xFFFF
         else:
-            self.count += self.delta
+            self.count -= self.delta
             
         self.prev = self.current
         return self.count
         
     def zero(self):
         self.count = 0
+        self.prev = self.timer.counter()
         
 if __name__ == "__main__":
     my_encoder = encoder(pyb.Pin.board.PC6, pyb.Pin.board.PC7, 8)
